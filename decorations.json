@@ -1,0 +1,60 @@
+{
+    "products": [
+      {
+        "id": 1,
+        "name": "Festive Lights",
+        "vendor": "Sparkle Decor",
+        "tags": ["holiday", "lights", "festive"],
+        "price": 29.99,
+        "image": "https://ik.imagekit.io/qmm9bxxcw/Ganesh/mobile-app/Decorations/images%20(1).jpeg?updatedAt=1706516318611",
+        "vendor_email": "info@sparkledecor.com",
+        "userId": "user123",
+        "status": "active"
+      },
+      {
+        "id": 2,
+        "name": "Golden Ornaments",
+        "vendor": "Glamour Crafts",
+        "tags": ["holiday", "ornaments", "gold"],
+        "price": 49.99,
+        "image": "https://ik.imagekit.io/qmm9bxxcw/Ganesh/mobile-app/Decorations/images%20(1).jpeg?updatedAt=1706516318611",
+        "vendor_email": "info@glamourcrafts.com",
+        "userId": "user456",
+        "status": "active"
+      },
+      {
+        "id": 3,
+        "name": "Winter Wonderland Wreath",
+        "vendor": "Snowy Accents",
+        "tags": ["winter", "wreath", "snow"],
+        "price": 39.99,
+        "image": "https://ik.imagekit.io/qmm9bxxcw/Ganesh/mobile-app/Decorations/images%20(1).jpeg?updatedAt=1706516318611",
+        "vendor_email": "info@snowyaccents.com",
+        "userId": "user789",
+        "status": "active"
+      },
+      {
+        "id": 4,
+        "name": "Elegant Candle Holders",
+        "vendor": "Chic Designs",
+        "tags": ["candles", "elegant", "decor"],
+        "price": 59.99,
+        "image": "https://ik.imagekit.io/qmm9bxxcw/Ganesh/mobile-app/Decorations/images%20(1).jpeg?updatedAt=1706516318611",
+        "vendor_email": "info@chicdesigns.com",
+        "userId": "user101",
+        "status": "active"
+      },
+      {
+        "id": 5,
+        "name": "Spring Blossom Garland",
+        "vendor": "Nature's Delight",
+        "tags": ["spring", "blossom", "garland"],
+        "price": 34.99,
+        "image": "https://ik.imagekit.io/qmm9bxxcw/Ganesh/mobile-app/Decorations/images%20(1).jpeg?updatedAt=1706516318611",
+        "vendor_email": "info@naturesdelight.com",
+        "userId": "user202",
+        "status": "active"
+      }
+    ]
+  }
+  

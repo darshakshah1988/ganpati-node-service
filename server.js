@@ -163,6 +163,48 @@ app.get('/subscription-plans', async (req, res) => {
   }
 });
 
+app.get('/decorations', (req, res) => {
+  try {
+    const { limit,vendor,tags,order,random } = req.query;
+
+    // Read products from the JSON file
+    const productsData = fs.readFileSync('decorations.json');
+    const products = JSON.parse(productsData);
+
+    // Filter products with status "active"
+    const activeProducts = products.filter(product => product.status === 'active');
+    // tags filter if exists
+    const filteredProducts = tags
+      ? activeProducts.filter(product => {
+          const productTags = product.tags || [];
+          return tags.split(',').every(tag => productTags.includes(tag.trim()));
+        })
+      : activeProducts;
+    // Applied Vendor filter
+    const vendorProducts = vendor ? filteredProducts.filter(product => product.vendor === vendor) : activeProducts;
+    // Apply limit if provided
+    const limitedProducts = limit ? vendorProducts.slice(0, parseInt(limit, 10)) : vendorProducts;
+
+    // Sort products based on order if order is provided
+    if (order) {
+      const sortOrder = order.toLowerCase() === 'desc' ? -1 : 1;
+      limitedProducts.sort((a, b) => (a.price - b.price) * sortOrder);
+    }
+
+    // Shuffle products randomly if random is provided
+    if (random) {
+      for (let i = limitedProducts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [limitedProducts[i], limitedProducts[j]] = [limitedProducts[j], limitedProducts[i]];
+      }
+    }
+
+    res.json({ success: true, products: limitedProducts });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 //upgrade subscription plan for userId
 app.put('/upgrade-subscription/:userId/:newSubscriptionPlanId', async (req, res) => {
   try {
