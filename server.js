@@ -44,6 +44,14 @@ const Product = mongoose.model('Product', {
   updatedAt: { type: Date, default: Date.now },
 });
 
+const ProductQuery = mongoose.model('ProductQuery', {
+  name: String,
+  productName: String,
+  message: String,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
@@ -274,6 +282,26 @@ app.post('/products', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+app.post("/idolsQuery", async (req,res) => {
+  try {
+    const { name, productName, message } = req.body;
+
+    // Create a new ProductQuery document with timestamps
+    const productQuery = new ProductQuery({
+      name,
+      productName,
+      message,
+    });
+
+    // Save the document to the MongoDB collection
+    await productQuery.save();
+
+    res.json({ success: true, message: 'Product query stored successfully.' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+})
 
 
 app.listen(port, () => {
