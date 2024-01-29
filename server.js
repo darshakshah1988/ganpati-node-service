@@ -171,9 +171,9 @@ app.get('/decorations', (req, res) => {
     const productsData = fs.readFileSync('decorations.json');
     const products = JSON.parse(productsData);
 
-    // Filter products with status "active"
+    // // Filter products with status "active"
     const activeProducts = products.filter(product => product.status === 'active');
-    // tags filter if exists
+    // // tags filter if exists
     const filteredProducts = tags
       ? activeProducts.filter(product => {
           const productTags = product.tags || [];
@@ -199,7 +199,7 @@ app.get('/decorations', (req, res) => {
       }
     }
 
-    res.json({ success: true, products: limitedProducts });
+    res.json({ success: true, decorations: limitedProducts });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
