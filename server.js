@@ -11,6 +11,20 @@ const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 3000;
 const Razorpay = require('razorpay');
+const multer = require('multer');
+const path = require('path');
+
+
+//photo upload 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+const upload = multer({ storage: storage });
 
 // Razorpay setup
 const razorpay = new Razorpay({
@@ -70,6 +84,13 @@ const Orders = mongoose.model('Orders', {
   userId: String,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
+})
+
+const WebhookEvents = mongoose.model('WebhookEvents', {
+  id: Number,
+  body: String,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 })
 
 // Middleware
@@ -239,7 +260,8 @@ app.post('/vregister', async (req, res) => {
 //2.5 check for webhook notifications from razorpay
 app.get("/payment/callback", async (req, res) => {
   try {
-    console.log(req.body);
+    const logs = new WebhookEvents({body: req.body});
+    logs.save();
   } catch(error) {
     console.log(error);
   }
@@ -438,10 +460,15 @@ app.put('/upgrade-subscription/:userId/:newSubscriptionPlanId', async (req, res)
 });
 
 // Route to add a product
-app.post('/products', async (req, res) => {
+app.post('/products', upload.single('photo'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No photo uploaded.');
+  }
+  
+  
   try {
-    const { name, description, image, category, price, dimensions, active, userId, subscriptionPlanId } = req.body;
-
+    const { name, description, category, price, dimensions, active, userId, subscriptionPlanId } = req.body;
+    const photoUrl = `http://localhost:${PORT}/${req.file.path}`;
     // Find the subscription plan to check the limit
     const subscriptionPlan = await SubscriptionPlan.findById(subscriptionPlanId);
 
@@ -461,7 +488,7 @@ app.post('/products', async (req, res) => {
     const product = new Product({
       name,
       description,
-      image,
+      photoUrl,
       category,
       price,
       dimensions,
@@ -497,6 +524,8 @@ app.post("/idolsQuery", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 })
+
+
 
 
 app.listen(port, () => {
