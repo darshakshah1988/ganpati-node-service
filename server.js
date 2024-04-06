@@ -157,7 +157,7 @@ app.post('/register', async (req, res) => {
     const { username, password, subscriptionPlanId, active = 0, agent = false, razorpayPlan = "", email, contact, city, state, pincode} = req.body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword, subscriptionPlan: subscriptionPlanId, active, agent, razorpayPlan, emai, contact, city, state, pincode });
+    const user = new User({ username, password: hashedPassword, subscriptionPlan: subscriptionPlanId, active, agent, razorpayPlan, email, contact, city, state, pincode });
     await user.save();
 
     res.json({ success: true, user });
