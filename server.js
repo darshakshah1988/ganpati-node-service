@@ -54,7 +54,10 @@ const User = mongoose.model('User', {
   agent: Boolean,
   razorpayPlan: String,
   email: String,
-  contact: String
+  contact: String,
+  city: String,
+  state: String,
+  pincode: String
 });
 
 const Product = mongoose.model('Product', {
