@@ -154,10 +154,10 @@ app.post('/subscription-plan', async (req, res) => {
 // 2) Register User with subscription plan selection
 app.post('/register', async (req, res) => {
   try {
-    const { username, password, subscriptionPlanId, active = 0, agent = false, razorpayPlan = "", email, contact} = req.body;
+    const { username, password, subscriptionPlanId, active = 0, agent = false, razorpayPlan = "", email, contact, city, state, pincode} = req.body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword, subscriptionPlan: subscriptionPlanId, active, agent, razorpayPlan });
+    const user = new User({ username, password: hashedPassword, subscriptionPlan: subscriptionPlanId, active, agent, razorpayPlan, emai, contact, city, state, pincode });
     await user.save();
 
     res.json({ success: true, user });
@@ -168,7 +168,7 @@ app.post('/register', async (req, res) => {
 
 app.post('/vregister', async (req, res) => {
   try {
-    const { username, password, subscriptionPlanId, active = 0, agent = true, email, contact } = req.body;
+    const { username, password, subscriptionPlanId, active = 0, agent = true, email, contact, city, state, pincode } = req.body;
     var razorpayPlan = "";
     var razorpayPrice = 0;
     var customerId;
@@ -196,7 +196,7 @@ app.post('/vregister', async (req, res) => {
     
     
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword, subscriptionPlan: subscriptionPlanId, active, agent, razorpayPlan });
+    const user = new User({ username, password: hashedPassword, subscriptionPlan: subscriptionPlanId, active, agent, razorpayPlan, email, contact, city, state, pincode });
     await user.save();
 
     const customer = await razorpay.customers.all({query: {email: email}});
@@ -207,7 +207,7 @@ app.post('/vregister', async (req, res) => {
     if(result.length > 0)
     {
       customerIsExists = 1;
-      customerId = result[0].id;
+      customerId = result[0].id; 
       const order = await createOrder(razorpayPrice, "INR", "OnlineOrder", customerId);
       console.log(order);
       const orderId = order.id;
