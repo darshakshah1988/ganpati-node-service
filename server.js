@@ -13,18 +13,21 @@ const port = process.env.PORT || 3000;
 const Razorpay = require('razorpay');
 const multer = require('multer');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 
 //photo upload 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Uploads will be stored in the 'uploads/' directory
   },
-  filename: function (req, file, cb) {
-    cb(null, `${Date.now()}${path.extname(file.originalname)}`);
-  },
+  filename: (req, file, cb) => {
+    const fileName = file.originalname.replace(/\s+/g, '-').toLowerCase();
+    cb(null, `${fileName}-${Date.now()}${path.extname(file.originalname)}`);
+  }
 });
-const upload = multer({ storage: storage });
+
+const upload = multer({ storage });
 
 // Razorpay setup
 const razorpay = new Razorpay({
@@ -57,7 +60,8 @@ const User = mongoose.model('User', {
   contact: String,
   city: String,
   state: String,
-  pincode: String
+  pincode: String,
+  consent: Boolean
 });
 
 const Product = mongoose.model('Product', {
@@ -67,6 +71,9 @@ const Product = mongoose.model('Product', {
   category: String,
   price: Number,
   dimensions: String,
+  city: String,
+  state: String,
+  pincode: String,
   active: Boolean,
   userId: String,
   createdAt: { type: Date, default: Date.now },
@@ -153,12 +160,15 @@ app.post('/subscription-plan', async (req, res) => {
 
 // 2) Register User with subscription plan selection
 app.post('/register', async (req, res) => {
-  try {
-    const { username, password, subscriptionPlanId, active = 0, agent = false, razorpayPlan = "", email, contact, city, state, pincode} = req.body;
 
+  var DummysubscriptionPlanId = "6611aba48dfcde682251d487";
+    
+  try {
+    const { username, password, subscriptionPlanId, active = 1, agent = false, razorpayPlan = "", email, contact, city, state, pincode} = req.body;
+      
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword, subscriptionPlan: subscriptionPlanId, active, agent, razorpayPlan, email, contact, city, state, pincode });
-    await user.save();
+    const user = new User({ username, password: hashedPassword, subscriptionPlan: DummysubscriptionPlanId, active, agent, razorpayPlan, email, contact, city, state, pincode });
+    await user.save(); 
 
     res.json({ success: true, user });
   } catch (error) {
@@ -167,11 +177,14 @@ app.post('/register', async (req, res) => {
 });
 
 app.post('/vregister', async (req, res) => {
+
+  console.log(req.body);
   try {
-    const { username, password, subscriptionPlanId, active = 0, agent = true, email, contact, city, state, pincode } = req.body;
+    const { username, password, subscriptionPlanId, active = 0, agent = true, email, contact, city, state, pincode, consent } = req.body;
     var razorpayPlan = "";
     var razorpayPrice = 0;
     var customerId;
+    var DummysubscriptionPlanId = "6611aba48dfcde682251d487";
     
 
     if(subscriptionPlanId == "65ac3edc9e8cc51805bfcd9e")
@@ -196,7 +209,7 @@ app.post('/vregister', async (req, res) => {
     
     
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword, subscriptionPlan: subscriptionPlanId, active, agent, razorpayPlan, email, contact, city, state, pincode });
+    const user = new User({ username, password: hashedPassword, subscriptionPlan: DummysubscriptionPlanId, active, agent, razorpayPlan, email, contact, city, state, pincode, consent });
     await user.save();
 
     const customer = await razorpay.customers.all({query: {email: email}});
@@ -277,12 +290,18 @@ app.post('/login', async (req, res) => {
 
     const user = await User.findOne({ username }).populate('subscriptionPlan');
 
+    
+
     if (!user) {
       return res.status(401).json({ success: false, message: 'Authentication failed. User not found.' });
     }
 
     if (user.active !== true) {
       return res.status(401).json({ success: false, message: 'Authentication failed. User status not active.' });
+    }
+
+    if (user.agent !== false) {
+      return res.status(401).json({ success: false, message: 'Authentication failed. Check username and password.' });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -309,8 +328,8 @@ app.post('/vlogin', async (req, res) => {
   try {
     const { username, password, agent } = req.body;
 
-    const user = await User.findOne({ username, agent: true }).populate('subscriptionPlan');
-    console.log("user",user);
+    const user = await User.findOne({ username, agent: true, active: true }).populate('subscriptionPlan');
+    
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Authentication failed. Agent not found.' });
@@ -328,11 +347,15 @@ app.post('/vlogin', async (req, res) => {
 
     const data = user;
 
+    
+
     // Generate JWT token with user data and subscription plan details
     const token = jwt.sign(
       { _id: user._id, username: user.username, subscriptionPlan: user.subscriptionPlan },
       'secret_key'
     );
+
+    console.log("userdata", user);
 
     res.json({ success: true, token, data });
   } catch (error) {
@@ -463,15 +486,17 @@ app.put('/upgrade-subscription/:userId/:newSubscriptionPlanId', async (req, res)
 });
 
 // Route to add a product
-app.post('/products', upload.single('photo'), async (req, res) => {
+app.post('/products', upload.single('file'), async (req, res) => {
+  
+  
   if (!req.file) {
     return res.status(400).send('No photo uploaded.');
   }
   
   
   try {
-    const { name, description, category, price, dimensions, active, userId, subscriptionPlanId } = req.body;
-    const photoUrl = `http://localhost:${PORT}/${req.file.path}`;
+    const { name, description, category, price, dimensions, active, userId, subscriptionPlanId, file, city, state, pincode} = req.body;
+    const photoUrl = `http://localhost:5001/${req.file.path}`;
     // Find the subscription plan to check the limit
     const subscriptionPlan = await SubscriptionPlan.findById(subscriptionPlanId);
 
@@ -482,7 +507,7 @@ app.post('/products', upload.single('photo'), async (req, res) => {
     // Check if the product limit has been reached
     const productsCount = await Product.countDocuments();
     if (productsCount >= subscriptionPlan.limit) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
         message: 'Product limit reached for the subscribed subscription plan.',
       });
@@ -491,18 +516,21 @@ app.post('/products', upload.single('photo'), async (req, res) => {
     const product = new Product({
       name,
       description,
-      photoUrl,
+      image: req.file.path,
       category,
       price,
       dimensions,
-      active,
+      active: false,
       userId,
       subscriptionPlan: subscriptionPlanId,
+      city,
+      state,
+      pincode
     });
 
     await product.save();
 
-    res.json({ success: true, product });
+    res.status(200).json({ success: true, message: "Product added successfully.", data: product });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -528,6 +556,16 @@ app.post("/idolsQuery", async (req, res) => {
   }
 })
 
+
+// Define route to handle file uploads
+app.post('/uploadtest', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded');
+  }
+
+  const filePath = req.file.path;
+  res.send(`File uploaded successfully. Path: ${filePath}`);
+});
 
 
 
