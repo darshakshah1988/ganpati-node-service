@@ -14,7 +14,7 @@ const Razorpay = require('razorpay');
 const multer = require('multer');
 const path = require('path');
 const nodemailer = require('nodemailer');
-
+const axios = require('axios');
 
 //photo upload 
 const storage = multer.diskStorage({
@@ -50,8 +50,6 @@ const SubscriptionPlan = mongoose.model('SubscriptionPlan', {
 });
 
 const User = mongoose.model('User', {
-  username: String,
-  password: String,
   subscriptionPlan: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPlan' },
   active: Boolean,
   agent: Boolean,
@@ -61,7 +59,9 @@ const User = mongoose.model('User', {
   city: String,
   state: String,
   pincode: String,
-  consent: Boolean
+  consent: Boolean,
+  address: String,
+  proofDocument: String
 });
 
 const Product = mongoose.model('Product', {
@@ -109,11 +109,10 @@ app.use(bodyParser.json());
 
 //check if razorpay customer is exists or not
 // Function to check if a customer exists
-async function checkCustomerExists(name,email,contact) {
+async function checkCustomerExists(email,contact) {
   try {
     // Fetch the customer from Razorpay based on email
     const customer = await razorpay.customers.create({
-      name: name,
       email: email,
       contact: contact // Provide customer's contact number
     });
@@ -176,98 +175,60 @@ app.post('/register', async (req, res) => {
   }
 });
 
+const sendOTP = async (mobileNumber) => {
+  try {
+    const response = await axios.post('https://hashtagmails.com/ganpatiwalla/send-message.php', {
+      mobileNumber: mobileNumber
+    });
+
+    if (response.data.success) {
+      console.log('OTP sent successfully');
+    } else {
+      console.log('Failed to send OTP');
+    }
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+  }
+};
+
+app.post("/verify-mobile", async(req,res) => {
+  const mobileNumber = req.body.mobile;  // Replace with the mobile number
+  const verify = sendOTP(mobileNumber);
+  console.log(verify);
+})
+
 app.post('/vregister', async (req, res) => {
 
-  console.log(req.body);
+  
   try {
-    const { username, password, subscriptionPlanId, active = 0, agent = true, email, contact, city, state, pincode, consent } = req.body;
+    const { subscriptionPlanId, active = 0, agent = true, email, contact, city, state, pincode, consent, address, document } = req.body;
     var razorpayPlan = "";
     var razorpayPrice = 0;
     var customerId;
     var DummysubscriptionPlanId = "6611aba48dfcde682251d487";
     
+    
+    //const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ subscriptionPlan: DummysubscriptionPlanId, active, agent, razorpayPlan, email, contact, city, state, pincode, consent, address, proofDocument: document });
+    
 
-    if(subscriptionPlanId == "65ac3edc9e8cc51805bfcd9e")
+    const existingUser = await User.findOne({ email, contact });
+
+    if(existingUser)
     {
-      razorpayPlan = process.env.BASIC_PLAN
-      razorpayPrice = process.env.BASIC_PLAN_PRICE
-    }
-    else if(subscriptionPlanId == "65ac3f1e9e8cc51805bfcd9f")
-    {
-      razorpayPlan = process.env.PRO_PLAN
-      razorpayPrice = process.env.PRO_PLAN_PRICE
-    }
-    else if(subscriptionPlanId == "65ac3f2f9e8cc51805bfcda0")
-    {
-      razorpayPlan = process.env.BUSINESS_PLAN
-      razorpayPrice = process.env.BUSINESS_PLAN_PRICE
+      res.json({ success: false, message:"User already exists and active." });
     }
     else
     {
-
-    }
-    
-    
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword, subscriptionPlan: DummysubscriptionPlanId, active, agent, razorpayPlan, email, contact, city, state, pincode, consent });
-    await user.save();
-
-    const customer = await razorpay.customers.all({query: {email: email}});
-    const result = customer.items.filter((e) => {
-      return e.email === email;
-    })
-
-    if(result.length > 0)
-    {
-      customerIsExists = 1;
-      customerId = result[0].id; 
-      const order = await createOrder(razorpayPrice, "INR", "OnlineOrder", customerId);
-      console.log(order);
-      const orderId = order.id;
-      const userId = user._id;
-      const successOrder = new Orders({orderId, customerId, userId});
-      await successOrder.save();
-    }
-    else
-    {
-      customerIsExists = 0;
-      customerId = await checkCustomerExists(username, email, contact);
-      console.log(customerId);
-      const order = await createOrder(razorpayPrice, "INR", "OnlineOrder", customerId);
-      console.log(order);
-      const orderId = order.id;
-      const userId = user._id;
-      const successOrder = new Orders({orderId, customerId, userId});
-      await successOrder.save();
+      user.save();
+      res.json({success: true, message: "User created successfully."}); 
     }
 
-    
-    
+
+
     
 
-    // Define subscription parameters
-    // const subscriptionOptions = {
-    //   plan_id: razorpayPlan, // The ID of the plan created in your Razorpay dashboard
-    //   customer_id: customerId, // The ID of the customer for whom you are creating the subscription
-    //   total_count: 1, // Total billing cycles, adjust as needed
-    //   quantity: 1, // Number of subscriptions, adjust as needed
-    //   notes: {
-    //     // Optional notes
-    //     description: 'One time subscription',
-    //     frequency: 'Yearly'
-    //   }
-    // };
-
-    // Create subscription
-    // await razorpay.subscriptions.create(subscriptionOptions, (error, subscription) => {
-    //   if (error) {
-    //     console.error('Subscription creation failed:', error);
-    //   } else {
-    //     console.log('Subscription created successfully:', subscription);
-    //   }
-    // });
-
-    res.json({ success: true, user });
+    
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
