@@ -182,12 +182,12 @@ const sendOTP = async (mobileNumber) => {
     });
 
     if (response.data.success) {
-      console.log('OTP sent successfully');
+      return 1
     } else {
-      console.log('Failed to send OTP');
+      return 0
     }
   } catch (error) {
-    console.error('Error sending OTP:', error);
+    return 0
   }
 };
 
