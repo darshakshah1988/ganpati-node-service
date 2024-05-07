@@ -194,7 +194,14 @@ const sendOTP = async (mobileNumber) => {
 app.post("/verify-mobile", async(req,res) => {
   const mobileNumber = req.body.mobile;  // Replace with the mobile number
   const verify = sendOTP(mobileNumber);
-  console.log(verify);
+  if(!verify)
+  {
+    res.status(401).json({status: "failed", message: "could not send the OTP" });
+  }
+  else
+  {
+  res.status(200).json({status: "success", message: "OTP sent"});
+  }
 })
 
 app.post('/vregister', async (req, res) => {
