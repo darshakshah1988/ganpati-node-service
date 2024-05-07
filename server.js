@@ -191,19 +191,32 @@ const sendOTP = async (mobileNumber) => {
   }
 };
 
-app.post("/verify-mobile", async(req,res) => {
-  const mobileNumber = req.body.mobile;  // Replace with the mobile number
-  const verify = sendOTP(mobileNumber);
-  console.log(verify);  
-  // if(verify == 0)
-  // {
-  //   res.status(401).json({status: "failed", message: "could not send the OTP" });
-  // }
-  // else
-  // {
-  // res.status(200).json({status: "success", message: "OTP sent"});
-  // }
-})
+app.post('/verify-mobile', async (req, res) => {
+  const { mobile } = req.body;
+
+  // Check if mobile number is provided
+  if (!mobile) {
+    return res.status(400).json({ error: 'Mobile number is required' });
+  }
+
+  try {
+    // Simulate sending OTP (Replace with actual API call)
+    const response = await axios.post('https://hashtagmails.com/ganpatiwalla/send-message.php', {
+      mobileNumber: mobileNumber,
+    });
+
+    // Check if OTP was sent successfully
+    if (response.data.success) {
+      return res.status(200).json({ message: 'OTP sent successfully' });
+    } else {
+      return res.status(500).json({ error: 'Failed to send OTP' });
+    }
+  } catch (error) {
+    // Log any errors
+    console.error('Error sending OTP:', error.message);
+    return res.status(500).json({ error: 'Failed to send OTP' });
+  }
+});
 
 app.post('/vregister', async (req, res) => {
 
