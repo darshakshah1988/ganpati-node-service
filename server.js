@@ -202,7 +202,7 @@ app.post('/verify-mobile', async (req, res) => {
   try {
     // Simulate sending OTP (Replace with actual API call)
     const response = await axios.post('https://hashtagmails.com/ganpatiwalla/send-message.php', {
-      mobileNumber: mobileNumber,
+      mobileNumber: mobile,
     });
 
     // Check if OTP was sent successfully
