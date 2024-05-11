@@ -203,6 +203,30 @@ app.post('/verify-mobile', async (req, res) => {
   }
 });
 
+// Route to verify OTP
+app.post('/verify-otp', async (req, res) => {
+  const { mobile, otp } = req.body;
+
+  try {
+    // Find the user with the given mobile number
+    const user = await User.findOne({ contact: mobile });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Compare the entered OTP with the stored OTP
+    if (user.otp === otp) {
+      res.status(200).json({ message: 'OTP verified successfully', userData: user });
+    } else {
+      res.status(400).json({ message: 'Invalid OTP' });
+    }
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 app.post('/vregister', async (req, res) => {
 
   
