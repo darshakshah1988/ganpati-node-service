@@ -61,7 +61,8 @@ const User = mongoose.model('User', {
   pincode: String,
   consent: Boolean,
   address: String,
-  proofDocument: String
+  proofDocument: String,
+  otp: String,
 });
 
 const Product = mongoose.model('Product', {
@@ -191,30 +192,32 @@ const sendOTP = async (mobileNumber) => {
   }
 };
 
+// Route to send OTP
 app.post('/verify-mobile', async (req, res) => {
-  const { mobile } = req.body;
-
-  // Check if mobile number is provided
-  if (!mobile) {
-    return res.status(400).json({ error: 'Mobile number is required' });
-  }
+  const mobileNumber = req.body.mobile;
 
   try {
-    // Simulate sending OTP (Replace with actual API call)
-    const response = await axios.post('https://hashtagmails.com/ganpatiwalla/send-message.php', {
-      mobileNumber: mobile,
-    });
+    // Call the external URL to send OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const response = await axios.post("https://hashtagmails.com/ganpatiwalla/send-message.php", { mobileNumber, otp });
+    console.log(response.data);
+    if (response.data.status === "success") {
+      // OTP sent successfully
+      res.status(200).json({ message: 'OTP sent successfully' });
+      //update otp to mongodb
+      const user = await User.findOneAndUpdate(
+        { contact: mobileNumber },
+        { otp },
+        { new: true, upsert: true }
+      );
 
-    // Check if OTP was sent successfully
-    if (response.data.success) {
-      return res.status(200).json({ message: 'OTP sent successfully' });
     } else {
-      return res.status(500).json({ error: 'Failed to send OTP' });
+      // Failed to send OTP
+      res.status(500).json({ message: 'Failed to send OTP1' });
     }
   } catch (error) {
-    // Log any errors
-    console.error('Error sending OTP:', error.message);
-    return res.status(500).json({ error: 'Failed to send OTP' });
+    console.error('Error sending OTP:', error);
+    res.status(500).json({ message: 'Failed to send OTP2' });
   }
 });
 
