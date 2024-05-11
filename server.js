@@ -176,31 +176,13 @@ app.post('/register', async (req, res) => {
   }
 });
 
-const sendOTP = async (mobileNumber) => {
-  try {
-    const response = await axios.post('https://hashtagmails.com/ganpatiwalla/send-message.php', {
-      mobileNumber: mobileNumber
-    });
-
-    if (response.data.success) {
-      return 1
-    } else {
-      return 0
-    }
-  } catch (error) {
-    return 0
-  }
-};
-
 // Route to send OTP
 app.post('/verify-mobile', async (req, res) => {
   const mobileNumber = req.body.mobile;
-
   try {
     // Call the external URL to send OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     const response = await axios.post("https://hashtagmails.com/ganpatiwalla/send-message.php", { mobileNumber, otp });
-    console.log(response.data);
     if (response.data.status === "success") {
       // OTP sent successfully
       res.status(200).json({ message: 'OTP sent successfully' });
@@ -217,7 +199,7 @@ app.post('/verify-mobile', async (req, res) => {
     }
   } catch (error) {
     console.error('Error sending OTP:', error);
-    res.status(500).json({ message: 'Failed to send OTP2' });
+    res.status(500).json({ message: error });
   }
 });
 
