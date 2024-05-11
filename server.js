@@ -190,7 +190,7 @@ app.post('/verify-mobile', async (req, res) => {
       const user = await User.findOneAndUpdate(
         { contact: mobileNumber },
         { otp },
-        { new: true, upsert: true }
+        { new: false, upsert: false }
       );
 
     } else {
@@ -212,7 +212,7 @@ app.post('/verify-otp', async (req, res) => {
     const user = await User.findOne({ contact: mobile });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found', needToCreate: true });
     }
 
     // Compare the entered OTP with the stored OTP
