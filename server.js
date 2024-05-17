@@ -227,6 +227,19 @@ app.post('/verify-otp', async (req, res) => {
   }
 });
 
+app.post('/sendwhatsapp', async (req, res) => {
+  const mobileNumber = req.body.mobile;
+  try {
+    // Call the external URL to send OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const response = await axios.post("https://hashtagmails.com/ganpatiwalla/send_whatsapp.php", { mobileNumber, otp });
+    console.log(response.data.messages_not_sent);
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+    res.status(500).json({ message: "Failed to send query2" });
+  }
+});
+
 app.post('/vregister', async (req, res) => {
 
   
@@ -557,6 +570,9 @@ app.post('/uploadtest', upload.single('file'), (req, res) => {
   const filePath = req.file.path;
   res.send(`File uploaded successfully. Path: ${filePath}`);
 });
+
+
+  
 
 
 
