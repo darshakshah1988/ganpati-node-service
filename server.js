@@ -63,6 +63,12 @@ const User = mongoose.model('User', {
   address: String,
   proofDocument: String,
   otp: String,
+  firstname: String,
+  lastname: String,
+  district: String,
+
+
+
 });
 
 const Product = mongoose.model('Product', {
@@ -164,13 +170,22 @@ app.post('/register', async (req, res) => {
   var DummysubscriptionPlanId = "6611aba48dfcde682251d487";
     
   try {
-    const { username, password, subscriptionPlanId, active = 1, agent = false, razorpayPlan = "", email, contact, city, state, pincode} = req.body;
-      
+    const { username, password, firstname, lastname, district, subscriptionPlanId, active = 1, agent = false, razorpayPlan = "", email, contact, city, state, pincode} = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword, subscriptionPlan: DummysubscriptionPlanId, active, agent, razorpayPlan, email, contact, city, state, pincode });
-    await user.save(); 
 
+    const existUser = await User.findOne({contact, email});
+    if(!existUser)
+    {
+    const user = new User({ username, password: hashedPassword, subscriptionPlan: DummysubscriptionPlanId, active, agent, razorpayPlan, email, contact, city, state, pincode, firstname, lastname, district });
+    await user.save(); 
     res.json({ success: true, user });
+    }
+    else
+    {
+      res.json({ success: false, message: "User already registered.", user: existUser });  
+    }
+
+    
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -572,7 +587,7 @@ app.post('/uploadtest', upload.single('file'), (req, res) => {
 });
 
 
-  
+
 
 
 
